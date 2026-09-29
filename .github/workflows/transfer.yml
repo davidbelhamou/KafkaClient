@@ -1,0 +1,120 @@
+# Transfer CI: every merge to main becomes one patch zip for the work side.
+# Spec: rules/transfer_ci.md. Runbook: docs/how_to_transfer.md.
+name: transfer
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "base, from the applied zip's manifest.txt (full hash, or none)"
+        required: true
+        type: string
+      head:
+        description: "head, from the applied zip's manifest.txt (full hash)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  patch:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    container: alpine:3.20
+    outputs:
+      patches: ${{ steps.patch.outputs.patches }}
+      zip_name: ${{ steps.patch.outputs.zip_name }}
+    steps:
+      # git must exist before checkout, or checkout downloads a tarball with no .git.
+      - name: Install git and zip
+        run: apk add --no-cache git zip
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Check the clone
+        run: |
+          test -d .git || { echo "ERROR T020 Checkout produced no .git."; exit 1; }
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Build patches
+        id: patch
+        env:
+          BEFORE: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+          PROJECT: ${{ github.event.repository.name }}
+        run: sh .github/transfer/patch.sh
+      - name: Hand patches to the zip job
+        if: steps.patch.outputs.patches != '0'
+        uses: actions/upload-artifact@v7
+        with:
+          name: patches
+          path: transfer/
+          retention-days: 1
+          if-no-files-found: error
+
+  zip:
+    needs: patch
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    container: alpine:3.20
+    env:
+      PATCHES: ${{ needs.patch.outputs.patches }}
+      ZIP_NAME: ${{ needs.patch.outputs.zip_name }}
+    steps:
+      - name: Install git and zip
+        run: apk add --no-cache git zip
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Check the clone
+        run: |
+          test -d .git || { echo "ERROR T020 Checkout produced no .git."; exit 1; }
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Nothing to zip
+        if: env.PATCHES == '0'
+        run: echo "No changes to transfer."
+      - name: Get patches
+        if: env.PATCHES != '0'
+        uses: actions/download-artifact@v8
+        with:
+          name: patches
+          path: transfer
+      - name: Build zip
+        if: env.PATCHES != '0'
+        run: sh .github/transfer/zip.sh
+      # archive: false stores the zip as-is, so the download is the zip itself.
+      - name: Publish zip
+        if: env.PATCHES != '0'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ env.ZIP_NAME }}
+          archive: false
+          retention-days: 1
+          if-no-files-found: error
+
+  mark_applied:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container: alpine:3.20
+    permissions:
+      contents: write
+    steps:
+      - name: Install git and zip
+        run: apk add --no-cache git zip
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Check the clone
+        run: |
+          test -d .git || { echo "ERROR T020 Checkout produced no .git."; exit 1; }
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Tag the applied zip
+        env:
+          BASE_IN: ${{ inputs.base }}
+          HEAD_IN: ${{ inputs.head }}
+        run: sh .github/transfer/mark_applied.sh
