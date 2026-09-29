@@ -2,7 +2,7 @@
 
 Python package with sync and async Kafka producer clients for sending rows to the data lakehouse ingestion topic.
 
-[] 1. Build the transfer CI per rules/transfer_ci.md
+[X] 1. Transfer CI — feature/transfer_ci
 [] 2. Project skeleton
 [] 3. Error classes and error code table
 [] 4. Config validation and librdkafka settings

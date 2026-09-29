@@ -28,9 +28,10 @@ the GitLab versions.
 ## Transfer
 Before building or editing `.github/workflows/`, read `rules/transfer_ci.md` in full
 and follow it exactly.
-CI: NOT BUILT
+CI: built (.github/workflows/transfer.yml)
 Work-side target branch: develop
 Internet-only paths: docs/, CLAUDE.md, rules/, TASK_PLAN.md, .github/, .claude/
+(the CI reads them from `.github/transfer/lib.sh`: change both together)
 
 ## Project docs
 Docs live in `docs/`, one line each below. Open one only when a task needs it.

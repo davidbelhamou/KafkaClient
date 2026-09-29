@@ -10,8 +10,7 @@ Back on the internet side, you run `mark_applied` so the next zip knows where to
 ## 1. Internet side: get the zip
 
 In GitHub, open Actions → the `transfer` run of the merge → Artifacts → download
-`<project>-<hash>`. If the download is a zip holding `<project>-<hash>.zip`, unwrap it once:
-the inner zip is the one to carry. Copy it to the USB. If the run says
+`<project>-<hash>.zip`, and copy it to the USB. If the run has no zip artifact and says
 "No changes to transfer.", there is nothing to carry.
 
 ## 2. Work side: apply the zip

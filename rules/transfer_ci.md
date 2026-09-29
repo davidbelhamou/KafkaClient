@@ -1,8 +1,11 @@
 # Transfer CI spec (GitHub Actions)
 
 The transfer method for this project. Build exactly this, as one GitHub Actions
-workflow in `.github/workflows/transfer.yml`. Other workflows (tests, for example)
-live in their own files; they never change this one. Every merge to the default
+workflow in `.github/workflows/transfer.yml`. The job logic lives in POSIX `sh`
+scripts in `.github/transfer/` (`patch.sh`, `zip.sh`, `mark_applied.sh`, and
+`lib.sh`, which holds the internet-only paths), so it can be tested locally.
+Other workflows (tests, for example) live in their own files; they never change
+this one. Every merge to the default
 branch produces one zip.
 
 (Local override: the kit's version of this spec targets GitLab CI. This one is the
@@ -30,7 +33,7 @@ the workflow.
   installs git and zip with `apk`, before checkout: without git in the container,
   `actions/checkout` silently downloads a tarball with no `.git`. After checkout,
   fail if `.git` is missing, and mark the workspace as a git `safe.directory`.
-- Every job checks out the full history with all tags (`actions/checkout` with
+- Every job checks out the full history with all tags (`actions/checkout@v7` with
   `fetch-depth: 0` and `fetch-tags: true`). The default is a shallow clone, which
   would break the patches and the tag lookup.
 - Permissions: `contents: read` for the workflow, `contents: write` only for
@@ -52,7 +55,8 @@ the workflow.
   hashes (the committer and commit date change). Use git's default patch names
   (`0001-<subject>.patch`) in a folder `patches/`.
 - Leave every internet-only path out of the patches. A commit left with no change
-  gets no patch; never produce an empty patch.
+  gets no patch; never produce an empty patch. (Done with a path-limited
+  `format-patch`: pathspec `:/` plus `:(top,exclude)<path>` per internet-only path.)
 - Produce `manifest.txt`, one `key: value` per line: `base` (full hash or
   `none`), `head` (full hash), `patches` (count), `project` (GitHub repository
   name, without the owner), `date` (UTC, ISO 8601).
@@ -71,12 +75,10 @@ the workflow.
 - The zip root holds `patches/`, `manifest.txt` and `SHA256SUMS`, nothing else.
 - Name it `<project>-<short head hash>.zip` (7 characters), where `<project>` is
   the GitHub repository name.
-- Upload it with `actions/upload-artifact` (pin the major version and check its
-  README when building), artifact name `<project>-<short head
-  hash>`, retention 1 day. If the action version supports uploading a single file
-  without archiving it, do that, so the download is the zip itself. Otherwise
-  GitHub wraps it in a second zip, and the runbook tells the user to unwrap it.
-  No apply instructions inside: the runbook is `docs/how_to_transfer.md`.
+- Upload it with `actions/upload-artifact@v7` and `archive: false`, retention 1
+  day. The artifact is the zip file itself, named after it, so the download is
+  the zip with no second wrapper. No apply instructions inside: the runbook is
+  `docs/how_to_transfer.md`.
 
 ## Job 3 — `mark_applied`
 
