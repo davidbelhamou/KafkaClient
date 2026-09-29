@@ -21,10 +21,9 @@ Kit version: 15df384 (2026-09-30)
 `new-project.ps1 -Update`. A rule needs a line in this file that is missing (after
 an update, say)? Ask the user for its value, then add it.
 
-Local override: this project is on GitHub, not GitLab. `rules/workflow.md`,
-`rules/airgap_transfer.md`, `rules/transfer_ci.md` and `docs/how_to_transfer.md` were
-edited here for GitHub (PRs, GitHub Actions). `new-project.ps1 -Update` overwrites
-them with the kit's GitLab versions: never run it without redoing these edits.
+This project is on GitHub, not GitLab: the local `rules/` and `docs/how_to_transfer.md`
+are adapted for GitHub, so never run `new-project.ps1 -Update`, which would restore
+the GitLab versions.
 
 ## Transfer
 Before building or editing `.github/workflows/`, read `rules/transfer_ci.md` in full
