@@ -13,3 +13,4 @@ Python package with sync and async Kafka producer clients for sending rows to th
 [] 9. Integration tests against a real Kafka broker
 [] 10. README with usage examples and error codes
 [] 11. Packaging: build the wheel and document the Artifactory upload
+[X] 12. Shorten GitHub note in CLAUDE.md — docs/shorten_github_note
