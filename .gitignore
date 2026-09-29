@@ -1,0 +1,12 @@
+.idea/
+.venv/
+__pycache__/
+.env
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+*.zip
+patches/
+.claude/settings.local.json
